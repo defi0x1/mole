@@ -121,16 +121,17 @@ why `--write-tests` verifies its own output before writing anything, is in
   object inside that text. To use a different agent CLI, point `command` at
   it and set `responseField` to wherever it puts its response text.
 
-## Works with loop-rat
+## Running it on a schedule
 
-mole fits as a nightly loop at `.claude/loops/mole/` in
-[loop-rat](https://github.com/mrbuzzoni/loop-rat): schedule `mole run
---write-tests` against your default branch and let it accumulate verified
-regression tests over time instead of running once. loop-rat's `verify`
-semantics are inverted for this loop — a red suite (a caught bug) is the
-good outcome, and a stubbornly green one is what should page you. mole does
-not depend on loop-rat in any way; it's a standalone CLI, and the loop is
-just cron plus a prompt.
+mole is built to run unattended. Targets rotate automatically -- it reads
+`.mole/history.jsonl` and skips files hit recently -- so a nightly run walks
+the codebase instead of re-testing one file forever. `--json` emits the
+machine-readable report, and the escape rate is tracked across runs, so the
+number trends as you close gaps.
+
+Note that the exit-code contract is inverted from an ordinary test step: a
+red suite under a mutant is the good outcome. Check the report, not the
+process exit code, if you wire this into automation.
 
 ## Limitations
 
