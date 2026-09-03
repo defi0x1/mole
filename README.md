@@ -37,9 +37,66 @@ ESCAPE REPORT · Sep 3, 2026 · src/cart.js
 That is real output from `mole run --demo` against the tiny fixture project
 shipped in this repo — no network, no API key, nothing to configure.
 
+## Requirements
+
+- **Node 20 or newer** and **git** -- mole runs each bug in a git worktree, so
+  the project you point it at has to be a git repository.
+- **A test suite that currently passes.** This is the measuring instrument. If
+  your tests are red, mole refuses to start, because you cannot score a suite
+  that is already failing.
+- **A coding-agent CLI on your PATH** for real runs. The default is `claude`;
+  any CLI that takes a prompt on stdin and returns JSON works, and it is
+  configurable. Not needed for `mole run --demo`, which is fully offline.
+
 ## Install
 
-mole is not published to npm. Clone and link it:
+### The fast way: have your agent do it
+
+Paste this into Claude Code, Cursor, or whatever agent you use, from inside the
+project you want to test:
+
+```
+Set up mole in this repository and run it for me.
+
+mole plants realistic bugs in a file, runs my test suite against each one, and
+reports which bugs my tests failed to catch.
+Repo: https://github.com/defi0x1/mole
+
+Please do this in order:
+
+1. Check I have Node 20+, git, and a test command that works. If anything is
+   missing, tell me instead of guessing or installing things silently.
+
+2. Clone mole somewhere outside this project (for example ~/.local/share/mole),
+   then run: npm install && npm run build && npm link
+   If npm link fails with a permissions error, skip it and use the absolute
+   path to <clone>/bin/mole.js everywhere below instead.
+
+3. Run `mole run --demo` first. It is offline and needs no API key. Do not
+   continue until it prints an ESCAPE REPORT -- that proves the install works.
+
+4. Come back to my repo and run `mole init`, then open the generated mole.json
+   and correct it for this project specifically:
+   - testCommand: the command that actually runs my tests
+   - include: my real source directory, not the default guess
+   - exclude: test files, fixtures, node_modules, build output
+   - if my test suite takes longer than about 30 seconds, set mutantsPerRun to 5
+
+5. Run my test suite and confirm it is green. mole needs a passing baseline and
+   will refuse to run otherwise. If it is red, stop and tell me what is failing.
+
+6. Pick the single most important file in this repo -- whatever handles money,
+   auth, permissions, or core business logic -- and run:
+   mole run --file <that file>
+
+7. Explain the escape report to me in plain language: what each escaped bug
+   means, whether it is a genuine gap in my tests or a mutant that does not
+   matter, and which one you would fix first.
+
+Do not run `mole run --write-tests` until I have seen the report and said yes.
+```
+
+### The manual way
 
 ```
 git clone https://github.com/defi0x1/mole.git
@@ -49,21 +106,53 @@ npm run build
 npm link
 ```
 
-`npm link` puts a `mole` binary on your PATH pointing at this checkout.
+`npm link` puts a `mole` binary on your PATH pointing at this checkout. If it
+fails on permissions, skip it -- `node /path/to/mole/bin/mole.js` works exactly
+the same everywhere `mole` appears below.
 
 ## Quickstart
 
+Three steps, in this order.
+
+**1. Prove it works, offline.**
+
 ```
 mole run --demo
-mole init
-mole run --write-tests
 ```
 
-The first command needs nothing from your project — it runs the full
-pipeline against a bundled fixture and proves mole works before you point it
-at real code. The second detects your test command and writes `mole.json`.
-The third plants bugs in your actual codebase and, for anything that
-escapes, writes a mechanically verified regression test.
+Runs the entire real pipeline -- worktrees, test runs, confirmation reruns,
+scoring -- against a bundled fixture project, substituting canned bugs for the
+model call. No API key, no network, nothing from your project. You should see an
+ESCAPE REPORT.
+
+**2. Point it at your project.**
+
+```
+cd /path/to/your/project
+mole init
+```
+
+Detects your test command and writes `mole.json`. Open it and check
+`testCommand`, `include`, and `exclude` are right for your layout -- the
+detection is a guess, not an oracle.
+
+**3. Attack your most important file.**
+
+```
+mole run --file src/billing/pricing.ts
+```
+
+Start with one file that matters rather than the whole repo. Every mutant costs
+a full test run, so a 30-second suite and 10 mutants is five minutes.
+
+When you trust the report, let it close the gaps:
+
+```
+mole run --file src/billing/pricing.ts --write-tests
+```
+
+Each generated test is verified to fail with the bug present and pass without it
+before it is written to disk. Tests that fail that check are discarded.
 
 ## How it works
 
@@ -132,6 +221,31 @@ number trends as you close gaps.
 Note that the exit-code contract is inverted from an ordinary test step: a
 red suite under a mutant is the good outcome. Check the report, not the
 process exit code, if you wire this into automation.
+
+## Troubleshooting
+
+**"baseline suite is not green"** -- mole ran your `testCommand` at HEAD and it
+failed. Fix the suite first. Scoring a red suite is meaningless.
+
+**Every mutant escaped (100%)** -- usually one of three things: `testCommand` is
+wrong and no tests actually ran; `include` points at files your tests never
+exercise; or your tests genuinely assert nothing. Check the first two before
+believing the third.
+
+**Everything came back `invalid`** -- the model's search strings did not match
+the file. This happens with very large files or a weak model. Try a smaller
+target file.
+
+**`npm link` fails with EACCES** -- skip it and call
+`node /path/to/mole/bin/mole.js` directly. mole does not need to be on your PATH.
+
+**It is too slow** -- lower `mutantsPerRun`, always pass `--file`, and target
+files whose tests run quickly. Total time is roughly `mutantsPerRun x suite
+duration`.
+
+**An escaped bug looks harmless** -- some mutants are equivalent, meaning the
+change has no observable effect. Those are not test gaps, and judging them is
+your job, not the tool's.
 
 ## Limitations
 

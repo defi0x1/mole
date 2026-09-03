@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseConfig, ConfigError, DEFAULT_CONFIG, detectTestCommand } from "../src/config.js";
+import { parseConfig, ConfigError, DEFAULT_CONFIG, detectTestCommand, detectSourceGlobs } from "../src/config.js";
 
 test("parseConfig returns defaults for an empty object", () => {
   const config = parseConfig("{}");
@@ -56,4 +56,41 @@ test("detectTestCommand returns undefined when absent or malformed", () => {
   assert.equal(detectTestCommand({ scripts: { test: "" } }), undefined);
   assert.equal(detectTestCommand(null), undefined);
   assert.equal(detectTestCommand("not an object"), undefined);
+});
+
+test("detectSourceGlobs picks the dominant extension and root", () => {
+  const globs = detectSourceGlobs([
+    "src/order.js",
+    "src/cart.js",
+    "src/util.js",
+    "test/order.test.js",
+    "package.json",
+    "README.md",
+  ]);
+  assert.deepEqual(globs?.include, ["src/**/*.js"]);
+  assert.ok(globs?.exclude.includes("**/*.test.js"));
+});
+
+test("detectSourceGlobs prefers TypeScript when it dominates", () => {
+  const globs = detectSourceGlobs(["src/a.ts", "src/b.ts", "src/c.ts", "scripts/x.js"]);
+  assert.deepEqual(globs?.include, ["src/**/*.ts"]);
+});
+
+test("detectSourceGlobs ignores tests, node_modules and build output", () => {
+  const globs = detectSourceGlobs([
+    "node_modules/pkg/index.js",
+    "dist/bundle.js",
+    "__tests__/a.js",
+    "lib/real.js",
+  ]);
+  assert.deepEqual(globs?.include, ["lib/**/*.js"]);
+});
+
+test("detectSourceGlobs handles sources at the repo root", () => {
+  const globs = detectSourceGlobs(["main.go", "handler.go", "go.mod"]);
+  assert.deepEqual(globs?.include, ["**/*.go"]);
+});
+
+test("detectSourceGlobs returns undefined when there is nothing to match", () => {
+  assert.equal(detectSourceGlobs(["README.md", "LICENSE"]), undefined);
 });

@@ -7,6 +7,7 @@ import {
   DEFAULT_CONFIG,
   loadConfig,
   detectTestCommand,
+  detectSourceGlobs,
   configPath,
   type Config,
 } from "./config.js";
@@ -72,10 +73,26 @@ async function cmdInit(cwd: string): Promise<number> {
     // no package.json, or it doesn't parse — fall back to the default
   }
 
-  const config: Config = { ...DEFAULT_CONFIG, testCommand };
+  let globs: { include: string[]; exclude: string[] } | undefined;
+  try {
+    globs = detectSourceGlobs(await git.listTrackedFiles(cwd));
+  } catch {
+    // not a git repo, or git unavailable — fall back to the defaults
+  }
+
+  const config: Config = {
+    ...DEFAULT_CONFIG,
+    testCommand,
+    include: globs?.include ?? [...DEFAULT_CONFIG.include],
+    exclude: globs?.exclude ?? [...DEFAULT_CONFIG.exclude],
+  };
   await writeFile(target, JSON.stringify(config, null, 2) + "\n", "utf8");
   log(`wrote ${target}`);
   log(`  testCommand: ${config.testCommand}`);
+  log(`  include:     ${config.include.join(", ")}`);
+  if (!globs) {
+    log(`  (could not detect your source layout — check include/exclude before running)`);
+  }
   log(`edit mole.json to adjust include/exclude globs and the agent CLI before running "mole run".`);
   return 0;
 }

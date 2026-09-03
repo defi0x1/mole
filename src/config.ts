@@ -154,6 +154,56 @@ export function configPath(cwd: string, file = "mole.json"): string {
   return path.join(cwd, file);
 }
 
+const SOURCE_EXTS = [
+  "ts", "tsx", "js", "jsx", "mjs", "cjs",
+  "py", "rs", "go", "rb", "java", "php", "cs", "kt", "swift",
+];
+const IGNORED_DIRS = /(^|\/)(node_modules|dist|build|target|vendor|coverage|\.git)(\/|$)/;
+const TEST_PATH = /(^|\/)(__tests__|tests?)(\/)|\.(test|spec)\.|_test\./;
+
+/**
+ * Picks include/exclude globs from the files a project actually has.
+ *
+ * The default is TypeScript under src/, which is wrong for most repos. Guessing
+ * from real paths means `mole run` works after `mole init` instead of failing
+ * with "no files match include/exclude patterns".
+ */
+export function detectSourceGlobs(
+  files: string[]
+): { include: string[]; exclude: string[] } | undefined {
+  const sources = files.filter((f) => {
+    if (IGNORED_DIRS.test(f)) return false;
+    if (TEST_PATH.test(f)) return false;
+    const ext = f.split(".").pop();
+    return ext !== undefined && SOURCE_EXTS.includes(ext);
+  });
+  if (sources.length === 0) return undefined;
+
+  const tally = (xs: string[]): string => {
+    const counts = new Map<string, number>();
+    for (const x of xs) counts.set(x, (counts.get(x) ?? 0) + 1);
+    // sort by count, then alphabetically, so the result is deterministic
+    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+  };
+
+  const ext = tally(sources.map((f) => f.split(".").pop() as string));
+  const ofExt = sources.filter((f) => f.endsWith("." + ext));
+  const root = tally(ofExt.map((f) => (f.includes("/") ? f.split("/")[0] : ".")));
+
+  const include = [root === "." ? `**/*.${ext}` : `${root}/**/*.${ext}`];
+  const exclude = [
+    `**/*.test.${ext}`,
+    `**/*.spec.${ext}`,
+    "**/__tests__/**",
+    "**/test/**",
+    "**/tests/**",
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+  ];
+  return { include, exclude };
+}
+
 /** Reads the "test" script from a package.json object, if present. */
 export function detectTestCommand(pkg: unknown): string | undefined {
   if (typeof pkg !== "object" || pkg === null) return undefined;

@@ -1,6 +1,6 @@
 {
   "name": "mole",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An adversary for your test suite. It plants plausible bugs and tells you which ones you would have shipped.",
   "type": "module",
   "license": "MIT",
