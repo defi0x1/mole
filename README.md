@@ -170,6 +170,15 @@ bash tests/smoke.sh
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for project layout and what a good
 PR looks like.
 
+## Related
+
+Sibling tools built on the same shape: a deterministic oracle does the scoring,
+and a model is only ever allowed to write the prose.
+
+- [burrow](https://github.com/defi0x1/burrow) -- gives any command a disposable git worktree, hard limits, and a receipt
+- [drift-graph](https://github.com/defi0x1/drift-graph) -- snapshots your import graph and shows which architectural boundaries got crossed
+- [hindsight](https://github.com/defi0x1/hindsight) -- replays an EVM wallet's trades against what would have happened if it had done nothing
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE).
