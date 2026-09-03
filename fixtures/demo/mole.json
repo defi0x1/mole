@@ -1,0 +1,9 @@
+{
+  "testCommand": "node --test",
+  "testTimeoutSec": 60,
+  "include": ["src/**/*.js"],
+  "exclude": ["**/*.test.js"],
+  "mutantsPerRun": 10,
+  "confirmRuns": 2,
+  "agent": { "command": "true", "args": [], "responseField": "result" }
+}

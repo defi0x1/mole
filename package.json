@@ -1,0 +1,29 @@
+{
+  "name": "mole",
+  "version": "0.1.0",
+  "description": "An adversary for your test suite. It plants plausible bugs and tells you which ones you would have shipped.",
+  "type": "module",
+  "license": "MIT",
+  "author": "defi0x1",
+  "bin": {
+    "mole": "bin/mole.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "fixtures/demo"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "pretest": "npm run build",
+    "test": "node --test dist/tests/*.test.js",
+    "demo": "node bin/mole.js run --demo"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.4"
+  }
+}

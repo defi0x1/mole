@@ -1,0 +1,18 @@
+{
+  "m2": {
+    "testFile": "test/cart.discount-boundary.test.js",
+    "testCode": "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { applyDiscount } from '../src/cart.js';\n\ntest('applyDiscount allows a full 100% discount', () => {\n  assert.equal(applyDiscount(100, 100), 0);\n});\n"
+  },
+  "m4": {
+    "testFile": "test/cart.tax-rounding.test.js",
+    "testCode": "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { calculateTax } from '../src/cart.js';\n\ntest('calculateTax rounds to whole cents', () => {\n  assert.equal(calculateTax(100, 0.07551), 7.55);\n});\n"
+  },
+  "m5": {
+    "testFile": "test/cart.tie-break.test.js",
+    "testCode": "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { mostExpensiveItem } from '../src/cart.js';\n\ntest('mostExpensiveItem picks the first item on a price tie', () => {\n  const items = [\n    { name: 'a', price: 10 },\n    { name: 'b', price: 10 },\n  ];\n  assert.equal(mostExpensiveItem(items).name, 'a');\n});\n"
+  },
+  "m6": {
+    "testFile": "test/cart.single-item.test.js",
+    "testCode": "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { mostExpensiveItem } from '../src/cart.js';\n\ntest('mostExpensiveItem returns the item for a single-item cart', () => {\n  const items = [{ name: 'solo', price: 42 }];\n  assert.equal(mostExpensiveItem(items).name, 'solo');\n});\n"
+  }
+}

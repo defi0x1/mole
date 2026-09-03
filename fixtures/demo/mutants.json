@@ -1,0 +1,82 @@
+[
+  {
+    "id": "m1",
+    "line": 2,
+    "category": "operator",
+    "description": "subtotal adds price and quantity instead of multiplying them",
+    "search": "sum + item.price * item.quantity",
+    "replace": "sum + item.price + item.quantity"
+  },
+  {
+    "id": "m2",
+    "line": 6,
+    "category": "boundary",
+    "description": "off-by-one on the discount upper bound, rejects a full 100% discount",
+    "search": "percent < 0 || percent > 100",
+    "replace": "percent < 0 || percent >= 100"
+  },
+  {
+    "id": "m3",
+    "line": 8,
+    "category": "sign",
+    "description": "discount adds to the subtotal instead of subtracting",
+    "search": "return subtotal - (subtotal * percent) / 100;",
+    "replace": "return subtotal + (subtotal * percent) / 100;"
+  },
+  {
+    "id": "m4",
+    "line": 12,
+    "category": "rounding",
+    "description": "tax rounds to three decimals instead of two, drifts on odd cents",
+    "search": "return Math.round(amount * rate * 100) / 100;",
+    "replace": "return Math.round(amount * rate * 1000) / 1000;"
+  },
+  {
+    "id": "m5",
+    "line": 21,
+    "category": "comparison",
+    "description": "tie-break on equal prices silently picks the later item",
+    "search": "item.price > max.price ? item : max",
+    "replace": "item.price >= max.price ? item : max"
+  },
+  {
+    "id": "m6",
+    "line": 20,
+    "category": "off-by-one",
+    "description": "single-item carts report no most-expensive item",
+    "search": "if (items.length === 0) return null;",
+    "replace": "if (items.length <= 1) return null;"
+  },
+  {
+    "id": "m7",
+    "line": 16,
+    "category": "signature",
+    "description": "formatTotal drops the options object, taxRate silently becomes undefined",
+    "search": "export function formatTotal(items, options = {}) {",
+    "replace": "export function formatTotal(items, discountPercent = 0) {"
+  },
+  {
+    "id": "m8",
+    "line": 6,
+    "category": "missing-check",
+    "description": "upper bound on discount percent is dropped entirely",
+    "search": "if (percent < 0 || percent > 100) {",
+    "replace": "if (percent < 0) {"
+  },
+  {
+    "id": "m9",
+    "line": 21,
+    "category": "rounding",
+    "description": "total floors instead of rounding, loses a cent on odd totals",
+    "search": "return Math.round((discounted + tax) * 100) / 100;",
+    "replace": "return Math.floor((discounted + tax) * 100) / 100;"
+  },
+  {
+    "id": "m10",
+    "line": 2,
+    "category": "missing-check",
+    "description": "reduce loses its initial value, an empty cart throws instead of returning 0",
+    "search": "return items.reduce((sum, item) => sum + item.price * item.quantity, 0);",
+    "replace": "return items.reduce((sum, item) => sum + item.price * item.quantity);"
+  }
+]
